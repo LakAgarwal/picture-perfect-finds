@@ -35,14 +35,21 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Lost and Found specific variables */
+    --laf-primary: 262 83% 74%;
+    --laf-primary-foreground: 210 40% 98%;
+    --laf-secondary: 260 32% 54%;
+    --laf-secondary-foreground: 222.2 47.4% 11.2%;
+    --laf-accent: 262 83% 74%;
+    --laf-accent-foreground: 222.2 47.4% 11.2%;
+    --laf-lost: 0 84% 60%;
+    --laf-lost-light: 0 100% 96%;
+    --laf-found: 142 71% 45%;
+    --laf-found-light: 142 76% 95%;
+    --laf-light: 220 13% 91%;
+    --laf-background: 0 0% 100%;
+    --laf-card: 0 0% 100%;
+    --laf-border: 214.3 31.8% 91.4%;
   }
 
   .dark {
@@ -73,6 +80,22 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 262 83% 74%;
+
+    /* Dark mode Lost and Found specific variables */
+    --laf-primary: 262 83% 74%;
+    --laf-primary-foreground: 222.2 47.4% 11.2%;
+    --laf-secondary: 260 32% 54%;
+    --laf-secondary-foreground: 210 40% 98%;
+    --laf-accent: 262 83% 74%;
+    --laf-accent-foreground: 210 40% 98%;
+    --laf-lost: 0 62% 40%;
+    --laf-lost-light: 0 30% 25%;
+    --laf-found: 142 42% 35%;
+    --laf-found-light: 142 30% 25%;
+    --laf-light: 217.2 32.6% 17.5%;
+    --laf-background: 222.2 84% 4.9%;
+    --laf-card: 222.2 84% 4.9%;
+    --laf-border: 217.2 32.6% 17.5%;
   }
 }
 
@@ -88,7 +111,7 @@
 
 @layer components {
   .item-card {
-    @apply bg-white rounded-lg shadow-md overflow-hidden transition-all hover:shadow-lg border border-gray-100;
+    @apply bg-white rounded-lg shadow-md overflow-hidden transition-all hover:shadow-lg border border-[hsl(var(--laf-border))];
   }
   
   .item-image {
@@ -96,6 +119,6 @@
   }
   
   .upload-zone {
-    @apply border-2 border-dashed border-lostfound-light rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-lostfound-primary;
+    @apply border-2 border-dashed border-[hsl(var(--laf-light))] rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-[hsl(var(--laf-primary))];
   }
 }
