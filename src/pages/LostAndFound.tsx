@@ -1,22 +1,22 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ItemCard from "@/components/ItemCard";
-import LostItemForm from "@/components/LostItemForm";
-import FoundItemForm from "@/components/FoundItemForm";
+import EnhancedLostItemForm from "@/components/EnhancedLostItemForm";
+import EnhancedFoundItemForm from "@/components/EnhancedFoundItemForm";
 import ItemDetails from "@/components/ItemDetails";
 import ContactDialog from "@/components/ContactDialog";
 import ImageCompare from "@/components/ImageCompare";
 import { Search } from "lucide-react";
-import { mockItems } from "@/data/mockItems";
 import { ItemDetails as ItemDetailsType, ItemStatus } from "@/types/lost-found";
-import { v4 as uuidv4 } from "uuid";
+import { useToast } from "@/components/ui/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAllItems, createItem, updateItem } from "@/services/lostFoundService";
 
 const LostAndFound: React.FC = () => {
-  const [items, setItems] = useState<ItemDetailsType[]>(mockItems);
-  const [filteredItems, setFilteredItems] = useState<ItemDetailsType[]>(mockItems);
+  const [filteredItems, setFilteredItems] = useState<ItemDetailsType[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"browse" | "lost" | "found">("browse");
   const [filterStatus, setFilterStatus] = useState<ItemStatus | "all">("all");
@@ -29,31 +29,45 @@ const LostAndFound: React.FC = () => {
     lost: ItemDetailsType | null;
     found: ItemDetailsType | null;
   }>({ lost: null, found: null });
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+  // Fetch all items
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ['lost-found-items'],
+    queryFn: () => getAllItems(),
+  });
+  
+  // Create item mutation
+  const createItemMutation = useMutation({
+    mutationFn: createItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lost-found-items'] });
+    },
+  });
+
+  // Apply filters whenever items, searchQuery or filterStatus changes
+  useEffect(() => {
+    if (!items) return;
+    
     const filtered = items.filter(
       (item) =>
         (filterStatus === "all" || item.status === filterStatus) &&
-        (item.title.toLowerCase().includes(query.toLowerCase()) ||
-          item.description.toLowerCase().includes(query.toLowerCase()) ||
-          item.category.toLowerCase().includes(query.toLowerCase()) ||
-          item.location.toLowerCase().includes(query.toLowerCase()))
-    );
-    setFilteredItems(filtered);
-  };
-
-  const handleStatusFilter = (status: ItemStatus | "all") => {
-    setFilterStatus(status);
-    const filtered = items.filter(
-      (item) =>
-        (status === "all" || item.status === status) &&
         (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.location.toLowerCase().includes(searchQuery.toLowerCase()))
     );
     setFilteredItems(filtered);
+  }, [items, searchQuery, filterStatus]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleStatusFilter = (status: ItemStatus | "all") => {
+    setFilterStatus(status);
   };
 
   const handleItemClick = (item: ItemDetailsType) => {
@@ -71,43 +85,64 @@ const LostAndFound: React.FC = () => {
     setIsCompareOpen(true);
   };
 
-  const handleLostItemSubmit = (imageUrl: string) => {
-    const newItem: ItemDetailsType = {
-      id: uuidv4(),
-      status: "lost",
-      title: "New Lost Item", // This would come from the form in a real implementation
-      description: "This is a placeholder for the submitted lost item description.",
-      category: "Other",
-      location: "Unknown Location",
-      date: new Date().toISOString().split('T')[0],
-      imageUrl: imageUrl,
-      contactEmail: "user@example.com",
-      isMatched: false,
-    };
-    
-    setItems([newItem, ...items]);
-    setFilteredItems([newItem, ...filteredItems]);
-    setActiveTab("browse");
+  const handleLostItemSubmit = async (item: ItemDetailsType) => {
+    try {
+      await createItemMutation.mutateAsync({
+        status: "lost",
+        title: item.title,
+        description: item.description,
+        category: item.category,
+        location: item.location,
+        date: item.date,
+        imageUrl: item.imageUrl,
+        contactEmail: item.contactEmail,
+        contactPhone: item.contactPhone
+      });
+      
+      toast({
+        title: "Success",
+        description: "Your lost item has been reported successfully.",
+      });
+      
+      setActiveTab("browse");
+    } catch (error) {
+      console.error("Error saving lost item:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem saving your lost item report.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleFoundItemSubmit = (imageUrl: string) => {
-    const newItem: ItemDetailsType = {
-      id: uuidv4(),
-      status: "found",
-      title: "New Found Item", // This would come from the form in a real implementation
-      description: "This is a placeholder for the submitted found item description.",
-      category: "Other",
-      location: "Unknown Location",
-      date: new Date().toISOString().split('T')[0],
-      imageUrl: imageUrl,
-      contactEmail: "finder@example.com",
-      isMatched: false,
-      matches: ["1"], // Just for demo purposes, in a real app this would be determined by image analysis
-    };
-    
-    setItems([newItem, ...items]);
-    setFilteredItems([newItem, ...filteredItems]);
-    setActiveTab("browse");
+  const handleFoundItemSubmit = async (item: ItemDetailsType) => {
+    try {
+      await createItemMutation.mutateAsync({
+        status: "found",
+        title: item.title,
+        description: item.description,
+        category: item.category,
+        location: item.location,
+        date: item.date,
+        imageUrl: item.imageUrl,
+        contactEmail: item.contactEmail,
+        contactPhone: item.contactPhone
+      });
+      
+      toast({
+        title: "Success",
+        description: "Your found item has been reported successfully.",
+      });
+      
+      setActiveTab("browse");
+    } catch (error) {
+      console.error("Error saving found item:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem saving your found item report.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -179,7 +214,11 @@ const LostAndFound: React.FC = () => {
             </div>
           </div>
 
-          {filteredItems.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Loading items...</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium text-gray-900">No items found</h3>
               <p className="mt-2 text-gray-500">
@@ -265,7 +304,7 @@ const LostAndFound: React.FC = () => {
             <p className="text-gray-500 mb-6">
               Please provide as much detail as possible to help others identify your item.
             </p>
-            <LostItemForm onSubmitComplete={handleLostItemSubmit} />
+            <EnhancedLostItemForm onSubmitComplete={handleLostItemSubmit} />
           </div>
         </TabsContent>
 
@@ -275,7 +314,7 @@ const LostAndFound: React.FC = () => {
             <p className="text-gray-500 mb-6">
               By reporting a found item, you're helping someone reunite with their belongings.
             </p>
-            <FoundItemForm onSubmitComplete={handleFoundItemSubmit} />
+            <EnhancedFoundItemForm onSubmitComplete={handleFoundItemSubmit} />
           </div>
         </TabsContent>
       </Tabs>
