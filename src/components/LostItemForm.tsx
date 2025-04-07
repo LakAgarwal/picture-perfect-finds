@@ -23,14 +23,15 @@ const formSchema = z.object({
   category: z.string().min(1, { message: "Category is required" }),
   location: z.string().min(3, { message: "Location is required" }),
   date: z.string().min(1, { message: "Date is required" }),
-  contactEmail: z.string().email({ message: "Invalid email address" }),
-  contactPhone: z.string().optional(),
+  name: z.string().min(2, { message: "Name is required" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  phone: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface LostItemFormProps {
-  onSubmitComplete: (imageUrl: string) => void;
+  onSubmitComplete: (formData: FormData) => void;
 }
 
 const LostItemForm: React.FC<LostItemFormProps> = ({ onSubmitComplete }) => {
@@ -46,8 +47,9 @@ const LostItemForm: React.FC<LostItemFormProps> = ({ onSubmitComplete }) => {
       category: "",
       location: "",
       date: new Date().toISOString().split('T')[0],
-      contactEmail: "",
-      contactPhone: "",
+      name: "",
+      email: "",
+      phone: "",
     },
   });
 
@@ -75,17 +77,26 @@ const LostItemForm: React.FC<LostItemFormProps> = ({ onSubmitComplete }) => {
     setIsSubmitting(true);
     
     try {
-      // In a real app, this is where you'd send the data to your backend
-      // For now, we'll just simulate a submission with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Create FormData to send
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("category", data.category);
+      formData.append("location", data.location);
+      formData.append("date", data.date);
+      formData.append("name", data.name);
+      formData.append("email", data.email);
+      if (data.phone) formData.append("phone", data.phone);
       
-      toast({
-        title: "Report Submitted",
-        description: "Your lost item report has been submitted successfully.",
-      });
+      // Add image file
+      const imageFile = await fetch(imagePreview)
+        .then(res => res.blob())
+        .then(blob => new File([blob], "image.jpg", { type: "image/jpeg" }));
       
-      // In a real application, this would be the URL returned from your backend
-      onSubmitComplete(imagePreview);
+      formData.append("image", imageFile);
+      
+      // Submit the form data
+      onSubmitComplete(formData);
       
       // Reset the form
       form.reset();
@@ -236,11 +247,25 @@ const LostItemForm: React.FC<LostItemFormProps> = ({ onSubmitComplete }) => {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your full name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="contactEmail"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact Email</FormLabel>
@@ -254,7 +279,7 @@ const LostItemForm: React.FC<LostItemFormProps> = ({ onSubmitComplete }) => {
               
               <FormField
                 control={form.control}
-                name="contactPhone"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact Phone (Optional)</FormLabel>

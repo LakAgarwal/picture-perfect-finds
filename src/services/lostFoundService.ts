@@ -44,7 +44,7 @@ export const createItem = async (item: Omit<ItemDetails, 'id' | 'isMatched'>): P
   }
   
   // Transform the data back to our ItemDetails type
-  return {
+  return data ? {
     id: data.id,
     status: data.status as ItemStatus,
     title: data.title,
@@ -58,7 +58,7 @@ export const createItem = async (item: Omit<ItemDetails, 'id' | 'isMatched'>): P
     isMatched: data.is_matched,
     matchConfidence: data.match_confidence,
     matches: data.matches
-  };
+  } : null;
 };
 
 export const getItemById = async (id: string): Promise<ItemDetails | null> => {
@@ -118,7 +118,7 @@ export const getAllItems = async (status?: ItemStatus): Promise<ItemDetails[]> =
   }
   
   // Transform the data to our ItemDetails type
-  return data.map(item => ({
+  return (data || []).map(item => ({
     id: item.id,
     status: item.status as ItemStatus,
     title: item.title,
