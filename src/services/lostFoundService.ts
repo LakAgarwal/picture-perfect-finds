@@ -19,6 +19,9 @@ interface LostFoundItem {
   match_confidence: number | null;
   matches: string[] | null;
   created_at: string | null;
+  image_labels: string[] | null; // Added for image matching optimization
+  color_profile: string | null;  // Added for color-based matching
+  object_type: string | null;    // Added for object classification
 }
 
 // Helper function to safely cast data from any table as our custom type
@@ -26,11 +29,176 @@ const castAsLostFoundItem = (data: any): LostFoundItem => {
   return data as LostFoundItem;
 };
 
+// Extract image labels from an image URL for better matching
+async function extractImageMetadata(imageUrl: string): Promise<{
+  labels: string[];
+  colorProfile: string;
+  objectType: string;
+}> {
+  try {
+    // This would typically involve AI image analysis
+    // For demo purposes, we'll return dummy data based on the image URL
+    // In a real implementation, this would call a service like Google Vision API, AWS Rekognition, etc.
+    
+    // Mock analysis based on image URL keywords
+    const url = imageUrl.toLowerCase();
+    const labels: string[] = [];
+    let colorProfile = "unknown";
+    let objectType = "item";
+    
+    // Extract potential labels from URL
+    if (url.includes("cat") || url.includes("pet")) {
+      labels.push("cat", "pet", "animal");
+      objectType = "animal";
+    }
+    if (url.includes("dog")) {
+      labels.push("dog", "pet", "animal");
+      objectType = "animal";
+    }
+    if (url.includes("phone") || url.includes("mobile")) {
+      labels.push("phone", "mobile", "electronics", "device");
+      objectType = "electronics";
+    }
+    if (url.includes("wallet") || url.includes("purse")) {
+      labels.push("wallet", "money", "personal");
+      objectType = "personal";
+    }
+    if (url.includes("key")) {
+      labels.push("key", "access", "personal");
+      objectType = "personal";
+    }
+    
+    // Extract color profile
+    if (url.includes("black")) colorProfile = "dark";
+    else if (url.includes("white")) colorProfile = "light";
+    else if (url.includes("blue")) colorProfile = "cool";
+    else if (url.includes("red") || url.includes("orange")) colorProfile = "warm";
+    else if (url.includes("green")) colorProfile = "natural";
+    else colorProfile = "mixed";
+    
+    // If no specific labels were found, add generic ones
+    if (labels.length === 0) {
+      labels.push("item", "object", "lost-found");
+    }
+    
+    return { labels, colorProfile, objectType };
+  } catch (error) {
+    console.error("Error extracting image metadata:", error);
+    return { 
+      labels: ["item", "object"], 
+      colorProfile: "unknown", 
+      objectType: "item" 
+    };
+  }
+}
+
+// Find potential matches for an item
+export const findPotentialMatches = async (item: ItemDetails): Promise<ItemDetails[]> => {
+  try {
+    // Get items of the opposite status for matching
+    const oppositeStatus: ItemStatus = item.status === "lost" ? "found" : "lost";
+    
+    // Get the item's metadata for efficient matching
+    let imageMetadata = {
+      labels: item.imageLabels || [],
+      colorProfile: item.colorProfile || "unknown",
+      objectType: item.objectType || "item"
+    };
+    
+    // If the item doesn't have metadata yet, extract it
+    if (imageMetadata.labels.length === 0) {
+      imageMetadata = await extractImageMetadata(item.imageUrl);
+    }
+    
+    // Query for potential matches using metadata
+    const { data, error } = await (supabase
+      .from('lost_found_items') as any)
+      .select('*')
+      .eq('status', oppositeStatus)
+      .eq('is_matched', false)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error finding potential matches:', error);
+      return [];
+    }
+    
+    // Convert DB items to our model
+    const items = (data || []).map(item => mapDbItemToItemDetails(castAsLostFoundItem(item)));
+    
+    // Enhanced matching algorithm
+    // Prioritize matches based on:
+    // 1. Category match
+    // 2. Label overlap
+    // 3. Date proximity
+    // 4. Location similarity
+    const potentialMatches = items
+      .map(potentialMatch => {
+        let score = 0;
+        
+        // Category match (highest weight)
+        if (potentialMatch.category === item.category) {
+          score += 40;
+        }
+        
+        // Label overlap
+        const potentialMatchLabels = potentialMatch.imageLabels || [];
+        const labelOverlap = imageMetadata.labels.filter(
+          label => potentialMatchLabels.includes(label)
+        ).length;
+        
+        score += labelOverlap * 15;
+        
+        // Color profile match
+        if (potentialMatch.colorProfile === imageMetadata.colorProfile) {
+          score += 10;
+        }
+        
+        // Object type match
+        if (potentialMatch.objectType === imageMetadata.objectType) {
+          score += 20;
+        }
+        
+        // Date proximity (within 7 days gets points)
+        const itemDate = new Date(item.date);
+        const matchDate = new Date(potentialMatch.date);
+        const daysDifference = Math.abs(
+          (itemDate.getTime() - matchDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        if (daysDifference <= 7) {
+          score += Math.max(0, 10 - daysDifference);
+        }
+        
+        // Location match (simple text matching for demo)
+        if (potentialMatch.location.toLowerCase().includes(item.location.toLowerCase()) ||
+            item.location.toLowerCase().includes(potentialMatch.location.toLowerCase())) {
+          score += 15;
+        }
+        
+        return {
+          ...potentialMatch,
+          matchConfidence: score > 100 ? 100 : score
+        };
+      })
+      .filter(match => match.matchConfidence >= 40) // Only return matches with decent confidence
+      .sort((a, b) => b.matchConfidence! - a.matchConfidence!);
+    
+    return potentialMatches.slice(0, 5); // Return top 5 matches
+  } catch (error) {
+    console.error("Error in findPotentialMatches:", error);
+    return [];
+  }
+};
+
 export const createItem = async (item: Omit<ItemDetails, 'id' | 'isMatched'>): Promise<ItemDetails | null> => {
   // Generate a new id
   const id = uuidv4();
   
   try {
+    // Extract image metadata for better matching
+    const { labels, colorProfile, objectType } = await extractImageMetadata(item.imageUrl);
+    
     // Store in Supabase using type assertion to bypass the type checking
     const { data, error } = await (supabase
       .from('lost_found_items') as any)
@@ -46,7 +214,10 @@ export const createItem = async (item: Omit<ItemDetails, 'id' | 'isMatched'>): P
         contact_email: item.contactEmail,
         contact_phone: item.contactPhone,
         is_matched: false,
-        match_confidence: item.matchConfidence || 0
+        match_confidence: item.matchConfidence || 0,
+        image_labels: labels,
+        color_profile: colorProfile,
+        object_type: objectType
       })
       .select()
       .single();
@@ -60,7 +231,10 @@ export const createItem = async (item: Omit<ItemDetails, 'id' | 'isMatched'>): P
         return {
           id,
           ...item,
-          isMatched: false
+          isMatched: false,
+          imageLabels: labels,
+          colorProfile: colorProfile,
+          objectType: objectType
         };
       }
       
@@ -206,5 +380,8 @@ function mapDbItemToItemDetails(item: LostFoundItem): ItemDetails {
     isMatched: item.is_matched || false,
     matchConfidence: item.match_confidence || 0,
     matches: item.matches || [],
+    imageLabels: item.image_labels || [],
+    colorProfile: item.color_profile || undefined,
+    objectType: item.object_type || undefined,
   };
 }
