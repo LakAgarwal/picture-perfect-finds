@@ -91,12 +91,7 @@ const EnhancedLostItemForm: React.FC<EnhancedLostItemFormProps> = ({ onSubmitCom
     }
   };
 
-  // Convert FormData to string to match the expected interface
-  const handleFormWrapper = (formData: FormData) => {
-    handleFormSubmit(formData);
-  };
-
-  return <LostItemForm onSubmitComplete={handleFormWrapper} />;
+  return <LostItemForm onSubmitComplete={handleFormSubmit} />;
 };
 
 export default EnhancedLostItemForm;

@@ -38,6 +38,57 @@ export type Database = {
           },
         ]
       }
+      lost_found_items: {
+        Row: {
+          category: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          date: string
+          description: string
+          id: string
+          image_url: string
+          is_matched: boolean | null
+          location: string
+          match_confidence: number | null
+          matches: string[] | null
+          status: string
+          title: string
+        }
+        Insert: {
+          category: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          date: string
+          description: string
+          id?: string
+          image_url: string
+          is_matched?: boolean | null
+          location: string
+          match_confidence?: number | null
+          matches?: string[] | null
+          status: string
+          title: string
+        }
+        Update: {
+          category?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          date?: string
+          description?: string
+          id?: string
+          image_url?: string
+          is_matched?: boolean | null
+          location?: string
+          match_confidence?: number | null
+          matches?: string[] | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

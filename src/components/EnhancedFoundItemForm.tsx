@@ -91,12 +91,7 @@ const EnhancedFoundItemForm: React.FC<EnhancedFoundItemFormProps> = ({ onSubmitC
     }
   };
 
-  // Convert FormData to string to match the expected interface
-  const handleFormWrapper = (formData: FormData) => {
-    handleFormSubmit(formData);
-  };
-
-  return <FoundItemForm onSubmitComplete={handleFormWrapper} />;
+  return <FoundItemForm onSubmitComplete={handleFormSubmit} />;
 };
 
 export default EnhancedFoundItemForm;
