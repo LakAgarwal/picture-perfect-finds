@@ -7,7 +7,20 @@ type LostFoundItem = ItemDetails;
 
 // Helper function to safely cast database response to LostFoundItem type
 const castAsLostFoundItem = (item: any): LostFoundItem => {
-  return item as LostFoundItem;
+  return {
+    id: item.id,
+    status: item.status,
+    title: item.title,
+    description: item.description,
+    category: item.category,
+    location: item.location,
+    date: item.date,
+    imageUrl: item.image_url, // map from snake_case to camelCase
+    contactEmail: item.contact_email, // map from snake_case to camelCase
+    contactPhone: item.contact_phone, // map from snake_case to camelCase
+    isMatched: item.is_matched, // map from snake_case to camelCase
+    // Add other fields as needed
+  } as LostFoundItem;
 };
 
 /**
@@ -16,7 +29,7 @@ const castAsLostFoundItem = (item: any): LostFoundItem => {
 export const getAllItems = async (): Promise<LostFoundItem[]> => {
   try {
     const { data, error } = await supabase
-      .from('lost_found_items' as any)
+      .from('lost_found_items')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -38,7 +51,7 @@ export const getAllItems = async (): Promise<LostFoundItem[]> => {
 export const getItemById = async (id: string): Promise<LostFoundItem> => {
   try {
     const { data, error } = await supabase
-      .from('lost_found_items' as any)
+      .from('lost_found_items')
       .select('*')
       .eq('id', id)
       .single();
@@ -60,17 +73,26 @@ export const getItemById = async (id: string): Promise<LostFoundItem> => {
  */
 export const createItem = async (item: Omit<LostFoundItem, 'id' | 'created_at'>): Promise<LostFoundItem> => {
   try {
+    // Convert from camelCase to snake_case for database fields
     const newItem = {
-      ...item,
-      id: uuidv4(),
+      title: item.title,
+      description: item.description,
+      category: item.category,
+      location: item.location,
+      date: item.date,
+      status: item.status,
+      image_url: item.imageUrl, // Convert camelCase to snake_case
+      contact_email: item.contactEmail, // Convert camelCase to snake_case
+      contact_phone: item.contactPhone, // Convert camelCase to snake_case
+      is_matched: item.isMatched || false, // Convert camelCase to snake_case
       created_at: new Date().toISOString(),
-      is_matched: false,
+      id: uuidv4(),
       matches: [],
       match_confidence: 0,
     };
 
     const { data, error } = await supabase
-      .from('lost_found_items' as any)
+      .from('lost_found_items')
       .insert(newItem)
       .select()
       .single();
@@ -92,9 +114,23 @@ export const createItem = async (item: Omit<LostFoundItem, 'id' | 'created_at'>)
  */
 export const updateItem = async (id: string, updates: Partial<LostFoundItem>): Promise<LostFoundItem> => {
   try {
+    // Convert camelCase to snake_case for database fields
+    const dbUpdates: any = {};
+    
+    if (updates.title) dbUpdates.title = updates.title;
+    if (updates.description) dbUpdates.description = updates.description;
+    if (updates.category) dbUpdates.category = updates.category;
+    if (updates.location) dbUpdates.location = updates.location;
+    if (updates.date) dbUpdates.date = updates.date;
+    if (updates.status) dbUpdates.status = updates.status;
+    if (updates.imageUrl) dbUpdates.image_url = updates.imageUrl;
+    if (updates.contactEmail) dbUpdates.contact_email = updates.contactEmail;
+    if (updates.contactPhone) dbUpdates.contact_phone = updates.contactPhone;
+    if (updates.isMatched !== undefined) dbUpdates.is_matched = updates.isMatched;
+
     const { data, error } = await supabase
-      .from('lost_found_items' as any)
-      .update(updates)
+      .from('lost_found_items')
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -117,7 +153,7 @@ export const updateItem = async (id: string, updates: Partial<LostFoundItem>): P
 export const deleteItem = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
-      .from('lost_found_items' as any)
+      .from('lost_found_items')
       .delete()
       .eq('id', id);
 
@@ -142,7 +178,7 @@ export const findPotentialMatches = async (item: LostFoundItem): Promise<LostFou
 
     // Query for potential matches using multiple criteria
     const { data, error } = await supabase
-      .from('lost_found_items' as any)
+      .from('lost_found_items')
       .select('*')
       .eq('status', searchStatus)
       .eq('is_matched', false)
@@ -337,13 +373,13 @@ export const generateMockItems = async (count: number = 20): Promise<void> => {
         category,
         location: sampleLocations[Math.floor(Math.random() * sampleLocations.length)],
         date: date.toISOString().split('T')[0],
-        imageUrl: `${imageUrl}?random=${i}`,
+        image_url: `${imageUrl}?random=${i}`,
         is_matched: false,
         matches: [],
         match_confidence: 0,
         created_at: new Date().toISOString(),
-        contactEmail: `user${Math.floor(Math.random() * 1000)}@example.com`,
-        contactPhone: Math.random() > 0.5 ? `555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}` : null,
+        contact_email: `user${Math.floor(Math.random() * 1000)}@example.com`,
+        contact_phone: Math.random() > 0.5 ? `555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}` : null,
         image_labels: randomLabels,
         color_profile: colorProfile,
         object_type: objectType
@@ -368,8 +404,8 @@ export const generateMockItems = async (count: number = 20): Promise<void> => {
           description: `I found this ${lostItem.category.toLowerCase()} near ${lostItem.location}. Contact me to claim it.`,
           // Slightly modify date (1-3 days difference)
           date: new Date(new Date(lostItem.date).getTime() + (1 + Math.floor(Math.random() * 3)) * 86400000).toISOString().split('T')[0],
-          contactEmail: `finder${Math.floor(Math.random() * 1000)}@example.com`,
-          contactPhone: Math.random() > 0.5 ? `555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}` : null,
+          contact_email: `finder${Math.floor(Math.random() * 1000)}@example.com`,
+          contact_phone: Math.random() > 0.5 ? `555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}` : null,
         };
         
         // Add to mock items
@@ -385,7 +421,7 @@ export const generateMockItems = async (count: number = 20): Promise<void> => {
     const batchSize = 10;
     for (let i = 0; i < mockItems.length; i += batchSize) {
       const batch = mockItems.slice(i, i + batchSize);
-      const { error } = await supabase.from('lost_found_items' as any).insert(batch);
+      const { error } = await supabase.from('lost_found_items').insert(batch);
       if (error) {
         console.error('Error inserting mock items:', error);
         throw new Error(`Error inserting mock items: ${error.message}`);

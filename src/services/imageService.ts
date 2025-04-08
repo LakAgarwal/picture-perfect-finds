@@ -24,7 +24,7 @@ export const uploadImage = async (file: File, profileId: string): Promise<string
     // Convert the file to base64
     const base64Data = await fileToBase64(file);
     
-    // Save the image reference in the database
+    // Save the image reference in the database with correct column name
     const { data, error: dbError } = await supabase
       .from('images')
       .insert({
@@ -58,7 +58,13 @@ export const getImagesByProfileId = async (profileId: string): Promise<ImageData
     return [];
   }
   
-  return data as ImageData[];
+  // Map database fields to our ImageData interface
+  return data.map(item => ({
+    id: item.id,
+    profile_id: item.profile_id,
+    base64_data: item.base64_data,
+    created_at: item.created_at
+  }));
 };
 
 export const getAllImages = async (): Promise<ImageData[]> => {
@@ -72,7 +78,13 @@ export const getAllImages = async (): Promise<ImageData[]> => {
     return [];
   }
   
-  return data as ImageData[];
+  // Map database fields to our ImageData interface
+  return data.map(item => ({
+    id: item.id,
+    profile_id: item.profile_id,
+    base64_data: item.base64_data,
+    created_at: item.created_at
+  }));
 };
 
 export const deleteImage = async (id: string): Promise<boolean> => {

@@ -6,6 +6,7 @@ import { uploadImage } from "@/services/imageService";
 import { toast } from "@/components/ui/use-toast";
 import { ItemDetails, ItemStatus } from "@/types/lost-found";
 import { v4 as uuidv4 } from "uuid";
+import { createItem } from "@/services/lostFoundService";
 
 interface EnhancedLostItemFormProps {
   onSubmitComplete: (item: ItemDetails) => void;
@@ -76,6 +77,20 @@ const EnhancedLostItemForm: React.FC<EnhancedLostItemFormProps> = ({ onSubmitCom
         contactPhone: phone,
         isMatched: false,
       };
+      
+      // Save the item to the database
+      await createItem({
+        title: newItem.title,
+        description: newItem.description,
+        category: newItem.category,
+        location: newItem.location,
+        date: newItem.date,
+        status: newItem.status,
+        imageUrl: newItem.imageUrl,
+        contactEmail: newItem.contactEmail,
+        contactPhone: newItem.contactPhone,
+        isMatched: newItem.isMatched,
+      });
       
       // Call the provided callback with the new item
       onSubmitComplete(newItem);
