@@ -119,6 +119,12 @@ const ImageCompare: React.FC<ImageCompareProps> = ({
       setConfidence(confidencePercentage);
       setIsAnalyzing(false);
       setAnalysisComplete(true);
+      
+      // Update the items with match confidence
+      if (lostItem && foundItem) {
+        // In a real application, this would call an API to update the database
+        console.log(`Match confidence: ${confidencePercentage}%`);
+      }
     } catch (err) {
       console.error("Error comparing images:", err);
       setError("Error analyzing images. Please try again.");

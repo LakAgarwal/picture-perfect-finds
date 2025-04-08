@@ -19,6 +19,9 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onContactClick, onViewDetails
     { addSuffix: true }
   );
 
+  // Only show matches badge if matches array exists and has items
+  const hasMatches = item.matches && item.matches.length > 0;
+
   return (
     <Card className="item-card h-full flex flex-col">
       <div className="relative">
@@ -36,7 +39,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onContactClick, onViewDetails
         >
           {item.status === "lost" ? "Lost" : "Found"}
         </Badge>
-        {item.matches && item.matches.length > 0 && (
+        {hasMatches && (
           <Badge className="absolute top-2 left-2 bg-lostfound-primary hover:bg-lostfound-secondary animate-pulse-light">
             Potential Match!
           </Badge>

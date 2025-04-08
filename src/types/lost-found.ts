@@ -14,5 +14,5 @@ export interface ItemDetails {
   contactPhone?: string;
   matches?: string[];
   isMatched?: boolean;
-  matchConfidence?: number; // Added for image comparison confidence score
+  matchConfidence?: number; // Match confidence score (0-100)
 }

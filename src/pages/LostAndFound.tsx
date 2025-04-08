@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,46 @@ const LostAndFound: React.FC = () => {
     lost: ItemDetailsType | null;
     found: ItemDetailsType | null;
   }>({ lost: null, found: null });
+  const [potentialMatches, setPotentialMatches] = useState<{
+    lostItem: ItemDetailsType;
+    foundItem: ItemDetailsType;
+    confidence: number;
+  } | null>(null);
+
+  // When items change, analyze for potential matches
+  useEffect(() => {
+    findPotentialMatches();
+  }, [items]);
+
+  // Function to find potential matches between lost and found items
+  const findPotentialMatches = () => {
+    // Get all lost and found items
+    const lostItems = items.filter(item => item.status === "lost");
+    const foundItems = items.filter(item => item.status === "found");
+    
+    // Only proceed if we have both lost and found items
+    if (lostItems.length === 0 || foundItems.length === 0) {
+      setPotentialMatches(null);
+      return;
+    }
+
+    // For demo purposes, we'll just use the first item of each to show as a potential match
+    // In a real application, this would use image similarity or other factors
+    // The demo items with IDs "1" and "2" are pre-configured to be a match
+    const lostItem = items.find(item => item.id === "1");
+    const foundItem = items.find(item => item.id === "2");
+    
+    // Only set as potential match if both items exist
+    if (lostItem && foundItem) {
+      setPotentialMatches({
+        lostItem,
+        foundItem,
+        confidence: 85 // For demo purposes, hardcode a high confidence
+      });
+    } else {
+      setPotentialMatches(null);
+    }
+  };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -102,7 +142,7 @@ const LostAndFound: React.FC = () => {
       imageUrl: imageUrl,
       contactEmail: "finder@example.com",
       isMatched: false,
-      matches: ["1"], // Just for demo purposes, in a real app this would be determined by image analysis
+      // Don't automatically add matches for new found items
     };
     
     setItems([newItem, ...items]);
@@ -199,64 +239,62 @@ const LostAndFound: React.FC = () => {
             </div>
           )}
 
-          {/* Potential Matches Section */}
-          {/* This would be dynamic in a real app, here we hardcode a match for demo */}
-          <div className="mt-12">
-            <h2 className="text-xl font-semibold mb-4">Potential Matches</h2>
-            
-            <div className="border border-lostfound-light bg-lostfound-light/20 rounded-lg p-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium mb-2 flex items-center">
-                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded mr-2">LOST</span>
-                    Lost Orange Tabby Cat
-                  </h3>
-                  <img 
-                    src="https://images.unsplash.com/photo-1582562124811-c09040d0a901" 
-                    alt="Lost Orange Cat"
-                    className="w-full h-48 object-cover rounded-md mb-3"
-                  />
-                  <p className="text-sm">My orange tabby cat went missing from the downtown area. She has a white collar with a bell.</p>
-                </div>
-                
-                <div className="flex items-center justify-center">
-                  <div className="py-4 px-2 bg-lostfound-primary/20 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-lostfound-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
+          {/* Potential Matches Section - Only show if matches exist */}
+          {potentialMatches && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold mb-4">Potential Matches</h2>
+              
+              <div className="border border-lostfound-light bg-lostfound-light/20 rounded-lg p-6">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium mb-2 flex items-center">
+                      <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded mr-2">LOST</span>
+                      {potentialMatches.lostItem.title}
+                    </h3>
+                    <img 
+                      src={potentialMatches.lostItem.imageUrl} 
+                      alt={potentialMatches.lostItem.title}
+                      className="w-full h-48 object-cover rounded-md mb-3"
+                    />
+                    <p className="text-sm">{potentialMatches.lostItem.description}</p>
+                  </div>
+                  
+                  <div className="flex items-center justify-center">
+                    <div className="py-4 px-2 bg-lostfound-primary/20 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-lostfound-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium mb-2 flex items-center">
+                      <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded mr-2">FOUND</span>
+                      {potentialMatches.foundItem.title}
+                    </h3>
+                    <img 
+                      src={potentialMatches.foundItem.imageUrl} 
+                      alt={potentialMatches.foundItem.title}
+                      className="w-full h-48 object-cover rounded-md mb-3"
+                    />
+                    <p className="text-sm">{potentialMatches.foundItem.description}</p>
                   </div>
                 </div>
                 
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium mb-2 flex items-center">
-                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded mr-2">FOUND</span>
-                    Found Orange Cat
-                  </h3>
-                  <img 
-                    src="https://images.unsplash.com/photo-1582562124811-c09040d0a901" 
-                    alt="Found Orange Cat"
-                    className="w-full h-48 object-cover rounded-md mb-3"
-                  />
-                  <p className="text-sm">Found a friendly orange tabby cat wandering near the park. Has a white collar with bell.</p>
+                <div className="mt-6 text-center">
+                  <p className="text-sm mb-2 font-medium text-lostfound-primary">
+                    Match Confidence: {potentialMatches.confidence}%
+                  </p>
+                  <Button 
+                    onClick={() => handleCompareClick(potentialMatches.lostItem, potentialMatches.foundItem)}
+                    className="bg-lostfound-primary hover:bg-lostfound-secondary"
+                  >
+                    Compare Items
+                  </Button>
                 </div>
               </div>
-              
-              <div className="mt-6 text-center">
-                <Button 
-                  onClick={() => {
-                    const lostItem = items.find(item => item.id === "1");
-                    const foundItem = items.find(item => item.id === "2");
-                    if (lostItem && foundItem) {
-                      handleCompareClick(lostItem, foundItem);
-                    }
-                  }}
-                  className="bg-lostfound-primary hover:bg-lostfound-secondary"
-                >
-                  Compare Items
-                </Button>
-              </div>
             </div>
-          </div>
+          )}
         </TabsContent>
 
         <TabsContent value="lost">
