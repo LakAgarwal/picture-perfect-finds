@@ -27,7 +27,7 @@ const EnhancedLostItemForm: React.FC<EnhancedLostItemFormProps> = ({ onSubmitCom
       const name = formData.get("name") as string;
       const email = formData.get("email") as string;
       const phone = formData.get("phone") as string || undefined;
-      const imageFile = formData.get("image") as File;
+      const imageBase64 = formData.get("imageBase64") as string;
       
       // Create or get profile
       let profile = await getProfileByEmail(email);
@@ -43,14 +43,20 @@ const EnhancedLostItemForm: React.FC<EnhancedLostItemFormProps> = ({ onSubmitCom
         }
       }
       
-      // Upload image if provided
+      // Use the base64 image data directly
       let imageUrl = "";
-      if (imageFile && imageFile.size > 0) {
-        const uploadedUrl = await uploadImage(imageFile, profile.id);
+      if (imageBase64) {
+        // Store the base64 image in the database
+        const uploadedUrl = await uploadImage(
+          // Create a dummy file object to pass to uploadImage
+          new File([new Blob([imageBase64])], "image.jpg", { type: "image/jpeg" }),
+          profile.id
+        );
+        
         if (!uploadedUrl) {
           throw new Error("Failed to upload image");
         }
-        imageUrl = uploadedUrl;
+        imageUrl = imageBase64; // Use the base64 data as the URL
       } else {
         // Use placeholder image if no image was uploaded
         imageUrl = "/placeholder.svg";

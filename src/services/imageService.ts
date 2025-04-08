@@ -5,63 +5,41 @@ import { v4 as uuidv4 } from "uuid";
 export interface ImageData {
   id: string;
   profile_id: string;
-  url: string;
+  base64_data: string;
   created_at?: string;
 }
 
+// Helper function to convert a File to base64 string
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
 export const uploadImage = async (file: File, profileId: string): Promise<string | null> => {
   try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExt}`;
-    const filePath = `${fileName}`;
-    
-    // Check if bucket exists
-    const { data: bucketList } = await supabase.storage.listBuckets();
-    const imagesBucketExists = bucketList?.some(bucket => bucket.name === 'images');
-    
-    // Only try to create bucket if it doesn't exist
-    if (!imagesBucketExists) {
-      const { error: createError } = await supabase.storage.createBucket('images', {
-        public: true,
-        fileSizeLimit: 5242880, // 5MB
-        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
-      });
-
-      if (createError) {
-        console.error('Error creating bucket:', createError);
-        return null;
-      }
-    }
-
-    const { error: uploadError } = await supabase.storage
-      .from('images')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      console.error('Error uploading image:', uploadError);
-      return null;
-    }
-
-    const { data } = supabase.storage
-      .from('images')
-      .getPublicUrl(filePath);
-
-    const publicUrl = data.publicUrl;
+    // Convert the file to base64
+    const base64Data = await fileToBase64(file);
     
     // Save the image reference in the database
-    const { error: dbError } = await supabase
+    const { data, error: dbError } = await supabase
       .from('images')
       .insert({
         profile_id: profileId,
-        url: publicUrl
-      });
+        base64_data: base64Data
+      })
+      .select();
 
     if (dbError) {
       console.error('Error saving image to database:', dbError);
       return null;
     }
 
-    return publicUrl;
+    // Return the base64 data directly
+    return base64Data;
   } catch (error) {
     console.error('Error in image upload process:', error);
     return null;
@@ -98,32 +76,6 @@ export const getAllImages = async (): Promise<ImageData[]> => {
 };
 
 export const deleteImage = async (id: string): Promise<boolean> => {
-  // First get the image URL to delete from storage
-  const { data: imageData, error: fetchError } = await supabase
-    .from('images')
-    .select('url')
-    .eq('id', id)
-    .maybeSingle();
-  
-  if (fetchError || !imageData) {
-    console.error('Error fetching image before deletion:', fetchError);
-    return false;
-  }
-  
-  // Extract filename from URL
-  const url = imageData.url;
-  const filename = url.substring(url.lastIndexOf('/') + 1);
-  
-  // Delete from storage
-  const { error: storageError } = await supabase.storage
-    .from('images')
-    .remove([filename]);
-  
-  if (storageError) {
-    console.error('Error deleting image from storage:', storageError);
-    // Continue to delete database entry even if storage deletion fails
-  }
-  
   // Delete from database
   const { error: dbError } = await supabase
     .from('images')

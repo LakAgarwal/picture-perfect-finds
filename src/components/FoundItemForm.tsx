@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -88,12 +87,8 @@ const FoundItemForm: React.FC<FoundItemFormProps> = ({ onSubmitComplete }) => {
       formData.append("email", data.email);
       if (data.phone) formData.append("phone", data.phone);
       
-      // Add image file
-      const imageFile = await fetch(imagePreview)
-        .then(res => res.blob())
-        .then(blob => new File([blob], "image.jpg", { type: "image/jpeg" }));
-      
-      formData.append("image", imageFile);
+      // Add the image as base64 directly
+      formData.append("imageBase64", imagePreview);
       
       // Submit the form data
       onSubmitComplete(formData);

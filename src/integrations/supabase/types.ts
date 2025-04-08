@@ -11,22 +11,22 @@ export type Database = {
     Tables: {
       images: {
         Row: {
+          base64_data: string
           created_at: string | null
           id: string
           profile_id: string | null
-          url: string
         }
         Insert: {
+          base64_data: string
           created_at?: string | null
           id?: string
           profile_id?: string | null
-          url: string
         }
         Update: {
+          base64_data?: string
           created_at?: string | null
           id?: string
           profile_id?: string | null
-          url?: string
         }
         Relationships: [
           {
