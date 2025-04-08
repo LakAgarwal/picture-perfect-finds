@@ -362,15 +362,8 @@ const LostAndFound: React.FC = () => {
                 <Button 
                   className="mt-4 bg-[hsl(var(--laf-primary))]" 
                   onClick={handleGenerateMockData}
-                  disabled={generateMockDataMutation.isPending}
                 >
-                  {generateMockDataMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...
-                    </>
-                  ) : (
-                    <>Generate Sample Items</>
-                  )}
+                  Refresh Data
                 </Button>
               </div>
             ) : (

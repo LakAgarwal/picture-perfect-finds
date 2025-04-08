@@ -1,5 +1,5 @@
 
-import React from 'react';
+import * as React from 'react';
 
 // Sound effects for Lost and Found application
 
