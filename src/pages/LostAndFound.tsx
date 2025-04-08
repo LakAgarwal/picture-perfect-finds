@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -59,13 +58,11 @@ const LostAndFound: React.FC = () => {
   const queryClient = useQueryClient();
   const { enabled: soundEnabled, toggleSoundEffects, play: playSound } = useSoundEffects();
 
-  // Fetch all items
   const { data: items = [], isLoading, refetch } = useQuery({
     queryKey: ['lost-found-items'],
     queryFn: () => getAllItems(),
   });
 
-  // Generate mock data mutation
   const generateMockDataMutation = useMutation({
     mutationFn: generateMockItems,
     onSuccess: () => {
@@ -84,25 +81,21 @@ const LostAndFound: React.FC = () => {
       });
     }
   });
-  
-  // Create item mutation
+
   const createItemMutation = useMutation({
     mutationFn: createItem,
     onSuccess: async (newItem) => {
       queryClient.invalidateQueries({ queryKey: ['lost-found-items'] });
       
-      // Play sound effect
       playSound(SoundEffect.REPORT_SUBMITTED);
       
       if (newItem) {
-        // Find potential matches for the new item
         setIsMatchesLoading(true);
         try {
           const matches = await findPotentialMatches(newItem);
           setPotentialMatches(matches);
           
           if (matches.length > 0) {
-            // Play match found sound
             playSound(SoundEffect.MATCH_FOUND);
             
             toast({
@@ -119,7 +112,6 @@ const LostAndFound: React.FC = () => {
     },
   });
 
-  // Get unique categories for filtering
   const categories = React.useMemo(() => {
     const uniqueCategories = new Set<string>();
     items.forEach(item => {
@@ -130,20 +122,16 @@ const LostAndFound: React.FC = () => {
     return Array.from(uniqueCategories);
   }, [items]);
 
-  // Apply filters whenever items, searchQuery, filterStatus, or categoryFilter changes
   useEffect(() => {
     if (!items) return;
     
     const filtered = items.filter((item) => {
-      // Apply status filter first
       const statusMatch = filterStatus === "all" || item.status === filterStatus;
       if (!statusMatch) return false;
       
-      // Apply category filter if any
       const categoryMatch = categoryFilter === "all" || item.category.toLowerCase() === categoryFilter.toLowerCase();
       if (!categoryMatch) return false;
       
-      // Then apply text search if any
       if (searchQuery.trim() === '') return true;
       
       const query = searchQuery.toLowerCase();
@@ -245,12 +233,11 @@ const LostAndFound: React.FC = () => {
     }
   };
 
-  // Get counts for lost and found items
   const lostItemsCount = items.filter(item => item.status === 'lost').length;
   const foundItemsCount = items.filter(item => item.status === 'found').length;
 
   const handleGenerateMockData = () => {
-    generateMockDataMutation.mutate();
+    generateMockDataMutation.mutate(20);
   };
 
   return (
@@ -313,7 +300,6 @@ const LostAndFound: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Browse All Tab */}
         <TabsContent value="browse" className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-6 border border-[hsl(var(--laf-border))]">
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
@@ -365,7 +351,6 @@ const LostAndFound: React.FC = () => {
               </div>
             </div>
 
-            {/* Category filters */}
             {categories.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-medium mb-2 flex items-center">
@@ -452,7 +437,6 @@ const LostAndFound: React.FC = () => {
             )}
           </div>
 
-          {/* Potential Matches Section will be dynamically populated based on selections */}
           {potentialMatches.length > 0 && (
             <div className="mt-12">
               <div className="flex items-center mb-4">
@@ -538,7 +522,6 @@ const LostAndFound: React.FC = () => {
                         </Button>
                       </div>
                       
-                      {/* Match ribbon */}
                       <div className="absolute top-0 right-0 bg-[hsl(var(--laf-primary))] text-white font-semibold py-1 px-4 shadow-lg transform rotate-[32deg] translate-x-[33%] translate-y-[-10%]">
                         MATCH
                       </div>
@@ -577,7 +560,6 @@ const LostAndFound: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialogs */}
       <ItemDetails
         item={selectedItem}
         isOpen={isDetailsOpen}

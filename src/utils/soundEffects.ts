@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 // Sound effects for Lost and Found application
 
 // Cache for loaded audio files

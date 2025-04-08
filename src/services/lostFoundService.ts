@@ -1,7 +1,9 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
-import { ItemStatus, ItemDetails, LostFoundItem } from '@/types/lost-found';
+import { ItemStatus, ItemDetails } from '@/types/lost-found';
+
+// Using ItemDetails type instead of LostFoundItem since that's what's available in the types
+type LostFoundItem = ItemDetails;
 
 // Helper function to safely cast database response to LostFoundItem type
 const castAsLostFoundItem = (item: any): LostFoundItem => {
@@ -230,19 +232,19 @@ const calculateMatchScore = (item1: LostFoundItem, item2: LostFoundItem): number
   }
   
   // Check metadata if available
-  if (item1.color_profile && item2.color_profile && 
-      item1.color_profile === item2.color_profile) {
+  if (item1.colorProfile && item2.colorProfile && 
+      item1.colorProfile === item2.colorProfile) {
     score += 10;
   }
   
-  if (item1.object_type && item2.object_type && 
-      item1.object_type === item2.object_type) {
+  if (item1.objectType && item2.objectType && 
+      item1.objectType === item2.objectType) {
     score += 15;
   }
   
-  if (item1.image_labels && item2.image_labels) {
-    const commonLabels = item1.image_labels.filter(label => 
-      item2.image_labels?.includes(label)
+  if (item1.imageLabels && item2.imageLabels) {
+    const commonLabels = item1.imageLabels.filter(label => 
+      item2.imageLabels?.includes(label)
     );
     
     score += Math.min(commonLabels.length * 5, 20); // Cap at 20 points
