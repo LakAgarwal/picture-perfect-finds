@@ -30,8 +30,7 @@ import {
   getAllItems, 
   createItem, 
   updateItem, 
-  findPotentialMatches,
-  generateMockItems
+  findPotentialMatches
 } from "@/services/lostFoundService";
 import { SoundEffect, useSoundEffects } from "@/utils/soundEffects";
 
@@ -61,25 +60,6 @@ const LostAndFound: React.FC = () => {
   const { data: items = [], isLoading, refetch } = useQuery({
     queryKey: ['lost-found-items'],
     queryFn: () => getAllItems(),
-  });
-
-  const generateMockDataMutation = useMutation({
-    mutationFn: generateMockItems,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lost-found-items'] });
-      toast({
-        title: "Sample data created",
-        description: "Random lost and found items have been added to the database.",
-      });
-    },
-    onError: (error) => {
-      console.error("Error generating mock data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate sample data. Please try again.",
-        variant: "destructive",
-      });
-    }
   });
 
   const createItemMutation = useMutation({
@@ -237,7 +217,7 @@ const LostAndFound: React.FC = () => {
   const foundItemsCount = items.filter(item => item.status === 'found').length;
 
   const handleGenerateMockData = () => {
-    generateMockDataMutation.mutate(20);
+    // No changes here
   };
 
   return (
@@ -253,21 +233,6 @@ const LostAndFound: React.FC = () => {
         </div>
 
         <div className="flex justify-center mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            className="mr-2"
-            onClick={handleGenerateMockData}
-            disabled={generateMockDataMutation.isPending}
-          >
-            {generateMockDataMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating Data...
-              </>
-            ) : (
-              <>Generate Sample Data</>
-            )}
-          </Button>
           <Button
             variant="outline"
             size="sm"

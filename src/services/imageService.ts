@@ -14,10 +14,13 @@ export const uploadImage = async (file: File, profileId: string): Promise<string
     const fileExt = file.name.split('.').pop();
     const fileName = `${uuidv4()}.${fileExt}`;
     const filePath = `${fileName}`;
-
-    // Create storage bucket if it doesn't exist
-    const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('images');
-    if (!bucketData && bucketError) {
+    
+    // Check if bucket exists
+    const { data: bucketList } = await supabase.storage.listBuckets();
+    const imagesBucketExists = bucketList?.some(bucket => bucket.name === 'images');
+    
+    // Only try to create bucket if it doesn't exist
+    if (!imagesBucketExists) {
       const { error: createError } = await supabase.storage.createBucket('images', {
         public: true,
         fileSizeLimit: 5242880, // 5MB
