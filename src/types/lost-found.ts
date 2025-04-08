@@ -14,18 +14,5 @@ export interface ItemDetails {
   contactPhone?: string;
   matches?: string[];
   isMatched?: boolean;
-  matchConfidence?: number;
-  imageLabels?: string[]; // Added for image matching optimization
-  colorProfile?: string;  // Added for color-based matching
-  objectType?: string;    // Added for object classification
-  // Additional properties used in the service layer
-  created_at?: string;
-  is_matched?: boolean;
-  match_confidence?: number;
-  color_profile?: string;
-  object_type?: string;
-  image_labels?: string[];
+  matchConfidence?: number; // Added for image comparison confidence score
 }
-
-// Export LostFoundItem as an alias for ItemDetails to maintain compatibility
-export type LostFoundItem = ItemDetails;
